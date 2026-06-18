@@ -2,6 +2,8 @@
 
 一个基于 Node.js + Sharp 的本地 Web 图片压缩与对比工具。
 
+![image-20260618132345847](./README/image-20260618132345847.png)
+
 ## 功能
 
 - 递归扫描指定目录下的图片（JPEG/PNG/WebP/AVIF/GIF/SVG）
