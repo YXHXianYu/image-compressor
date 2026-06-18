@@ -107,9 +107,8 @@ const App = {
         let item = this.listItemElements.get(image.id);
         if (!item) {
           item = this.createListItem(image);
-        } else {
-          this.updateListItemContent(item, image);
         }
+        this.updateListItemContent(item, image);
         this.updateListItemState(item, image);
         newElements.set(image.id, item);
         fragment.appendChild(item);
