@@ -1,0 +1,26 @@
+{
+  "name": "image-compressor-web",
+  "version": "1.0.0",
+  "description": "Web-based local image compression and comparison tool for blog assets.",
+  "main": "backend/app.js",
+  "scripts": {
+    "start": "node backend/app.js",
+    "dev": "node backend/app.js",
+    "test": "node tests/compressor.test.js"
+  },
+  "keywords": [
+    "image",
+    "compression",
+    "sharp",
+    "blog",
+    "optimization"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "sharp": "^0.33.4",
+    "glob": "^10.4.2",
+    "fs-extra": "^11.2.0"
+  }
+}

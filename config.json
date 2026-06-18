@@ -1,0 +1,18 @@
+{
+  "targetDir": "E:/Data/BJTU/NJU1/15.Blog/my-blog/source/_posts/2603-japan",
+  "maxFileSizeKB": 500,
+  "minQuality": 65,
+  "strategy": "size_first",
+  "outputFormats": {
+    "jpeg": { "quality": 85, "progressive": true, "mozjpeg": true },
+    "jpg": { "quality": 85, "progressive": true, "mozjpeg": true },
+    "png": { "quality": 80, "compressionLevel": 9, "palette": true },
+    "webp": { "quality": 85 },
+    "avif": { "quality": 75 },
+    "gif": { "progressive": true },
+    "svg": { }
+  },
+  "fallbackFormat": "webp",
+  "ignoredDirs": [".git", "node_modules", "cache", "tmp", ".cache"],
+  "supportedFormats": ["jpg", "jpeg", "png", "webp", "avif", "gif", "svg"]
+}

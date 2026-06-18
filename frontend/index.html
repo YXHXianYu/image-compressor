@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图片压缩对比工具</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>🖼️ 图片压缩对比工具</h1>
+      <div class="controls">
+        <span id="targetDir" class="target-dir"></span>
+        <button id="scanBtn" class="btn btn-primary">扫描并压缩</button>
+        <button id="settingsBtn" class="btn">设置</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h2>图片列表</h2>
+          <label class="select-all">
+            <input type="checkbox" id="selectAll"> 全选
+          </label>
+        </div>
+        <div id="imageList" class="image-list">
+          <div class="empty-state">点击“扫描并压缩”开始</div>
+        </div>
+        <div class="sidebar-footer">
+          <button id="replaceBtn" class="btn btn-success" disabled>应用选中替换</button>
+          <button id="revertBtn" class="btn btn-warning" disabled>撤销选中</button>
+        </div>
+      </aside>
+
+      <section class="preview-pane">
+        <div class="preview-header">
+          <h2>对比预览</h2>
+          <div class="preview-info" id="previewInfo">请选择一张图片</div>
+          <div class="zoom-control">
+            <label>放大倍数: <span id="zoomValue">2</span>x</label>
+            <input type="range" id="zoomSlider" min="1" max="16" step="0.5" value="2">
+          </div>
+        </div>
+        <div class="comparison" id="comparison">
+          <div class="comparison-panel">
+            <div class="panel-label">原图</div>
+            <div class="image-wrapper" id="originalWrapper">
+              <img id="originalImg" src="" alt="原图" class="comparison-image">
+            </div>
+          </div>
+          <div class="comparison-panel">
+            <div class="panel-label">压缩后</div>
+            <div class="image-wrapper" id="compressedWrapper">
+              <img id="compressedImg" src="" alt="压缩后" class="comparison-image">
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="loadingOverlay" class="loading-overlay hidden">
+      <div class="spinner"></div>
+      <div class="loading-text">正在扫描并压缩图片，请稍候...</div>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/comparator.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
