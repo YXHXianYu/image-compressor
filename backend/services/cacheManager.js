@@ -48,6 +48,7 @@ class CacheManager {
     if (!image) return;
 
     image.compressed = result.success;
+    image.skipped = result.skipped || false;
     image.compressedSize = result.compressedSize;
     image.cachePath = result.cachePath;
     image.thumbnailPath = result.thumbnailPath;

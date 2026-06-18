@@ -255,6 +255,21 @@ body {
   background: #fef2f2;
 }
 
+.image-item.skipped {
+  opacity: 0.55;
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  cursor: default;
+}
+
+.image-item.skipped .image-savings {
+  color: var(--text-secondary);
+}
+
+.image-item.skipped .image-thumb {
+  filter: grayscale(60%);
+}
+
 .sidebar-footer {
   padding: 12px;
   border-top: 1px solid var(--border);

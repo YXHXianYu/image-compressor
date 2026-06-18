@@ -80,6 +80,44 @@ async function compressImage(inputPath) {
   const { cacheKey, cacheFilePath } = await getCachePath(inputPath);
   const cacheMetaPath = path.join(CACHE_DIR, cacheKey, 'meta.json');
   const thumbnailPath = path.join(CACHE_DIR, cacheKey, 'thumb.jpg');
+  const originalSize = (await fs.stat(inputPath)).size;
+  const skipThresholdBytes = (config.skipThresholdKB || 0) * 1024;
+
+  // Skip images already below the threshold
+  if (skipThresholdBytes > 0 && originalSize <= skipThresholdBytes) {
+    await fs.ensureDir(path.dirname(cacheFilePath));
+
+    if (!await fs.pathExists(thumbnailPath)) {
+      try {
+        await sharp(inputPath)
+          .resize(THUMBNAIL_WIDTH, null, { withoutEnlargement: true })
+          .jpeg({ quality: THUMBNAIL_QUALITY, progressive: true })
+          .toFile(thumbnailPath);
+      } catch (thumbErr) {
+        console.warn(`Failed to generate thumbnail for ${inputPath}:`, thumbErr.message);
+      }
+    }
+
+    await fs.writeJson(cacheMetaPath, {
+      originalPath: inputPath,
+      originalSize,
+      compressedSize: originalSize,
+      quality: 0,
+      skipped: true,
+      format: format === 'jpeg' ? 'jpg' : format,
+      createdAt: new Date().toISOString()
+    });
+
+    return {
+      success: true,
+      skipped: true,
+      cachePath: inputPath,
+      thumbnailPath: (await fs.pathExists(thumbnailPath)) ? thumbnailPath : null,
+      compressedSize: originalSize,
+      quality: 0,
+      error: null
+    };
+  }
 
   // Check cache hit
   if (await fs.pathExists(cacheFilePath)) {

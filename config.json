@@ -3,6 +3,7 @@
   "maxFileSizeKB": 500,
   "minQuality": 65,
   "strategy": "size_first",
+  "skipThresholdKB": 1100,
   "outputFormats": {
     "jpeg": { "quality": 85, "progressive": true, "mozjpeg": true },
     "jpg": { "quality": 85, "progressive": true, "mozjpeg": true },

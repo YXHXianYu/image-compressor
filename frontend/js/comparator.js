@@ -62,6 +62,12 @@ class ImageComparator {
     const comp = image.compressedSize ? this.formatSize(image.compressedSize) : '-';
     const ratio = image.savingRatio ? `(-${(image.savingRatio * 100).toFixed(1)}%)` : '';
     const dims = image.width && image.height ? `${image.width}x${image.height}` : '';
+
+    if (image.skipped) {
+      this.previewInfo.textContent = `${image.name} | ${dims} | 原图 ${orig} | 已跳过（小于压缩阈值）`;
+      return;
+    }
+
     this.previewInfo.textContent = `${image.name} | ${dims} | 原图 ${orig} → 压缩后 ${comp} ${ratio}`;
   }
 

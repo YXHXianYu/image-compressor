@@ -148,7 +148,17 @@ const App = {
       </div>
     `;
 
+    const checkbox = item.querySelector('input[type="checkbox"]');
+
     item.addEventListener('click', (e) => {
+      if (image.skipped) {
+        // Skipped images can only be previewed, not selected
+        if (e.target.tagName !== 'INPUT') {
+          this.activateImage(image.id);
+        }
+        return;
+      }
+
       if (e.target.tagName === 'INPUT') {
         e.stopPropagation();
         this.toggleSelection(image.id);
@@ -165,12 +175,21 @@ const App = {
     const nameEl = item.querySelector('.image-name');
     const sizesEl = item.querySelector('.image-sizes');
     const savingsEl = item.querySelector('.image-savings');
+    const checkbox = item.querySelector('input[type="checkbox"]');
 
     thumb.src = API.getThumbnailUrl(image.id);
     thumb.style.display = '';
     nameEl.textContent = image.name;
     nameEl.title = image.name;
 
+    if (image.skipped) {
+      checkbox.disabled = true;
+      sizesEl.textContent = `${this.formatSize(image.originalSize)}（已跳过）`;
+      savingsEl.textContent = '小于阈值，无需压缩';
+      return;
+    }
+
+    checkbox.disabled = false;
     const compressedText = image.compressedSize
       ? `${this.formatSize(image.compressedSize)}`
       : (image.error ? '压缩失败' : '未压缩');
@@ -183,13 +202,14 @@ const App = {
   updateListItemState(item, image) {
     item.classList.toggle('active', image.id === this.activeId);
     item.classList.toggle('error', !!image.error);
+    item.classList.toggle('skipped', !!image.skipped);
     const checkbox = item.querySelector('input[type="checkbox"]');
     checkbox.checked = this.selectedIds.has(image.id);
   },
 
   updateSelectAllState() {
     const selectAll = document.getElementById('selectAll');
-    const selectable = this.images.filter(img => img.compressed && !img.error);
+    const selectable = this.images.filter(img => img.compressed && !img.error && !img.skipped);
     selectAll.checked = selectable.length > 0 && selectable.every(img => this.selectedIds.has(img.id));
   },
 
@@ -211,6 +231,9 @@ const App = {
   },
 
   toggleSelection(id) {
+    const image = this.images.find(img => img.id === id);
+    if (image && image.skipped) return;
+
     if (this.selectedIds.has(id)) {
       this.selectedIds.delete(id);
     } else {
@@ -229,7 +252,7 @@ const App = {
   toggleSelectAll(checked) {
     if (checked) {
       for (const image of this.images) {
-        if (image.compressed && !image.error) {
+        if (image.compressed && !image.error && !image.skipped) {
           this.selectedIds.add(image.id);
         }
       }
@@ -252,7 +275,10 @@ const App = {
   },
 
   async replaceSelected() {
-    const ids = Array.from(this.selectedIds);
+    const ids = Array.from(this.selectedIds).filter(id => {
+      const image = this.images.find(img => img.id === id);
+      return image && !image.skipped;
+    });
     if (ids.length === 0) return;
 
     this.setLoading(true, '正在替换原图，请稍候...');
@@ -275,7 +301,10 @@ const App = {
   },
 
   async revertSelected() {
-    const ids = Array.from(this.selectedIds);
+    const ids = Array.from(this.selectedIds).filter(id => {
+      const image = this.images.find(img => img.id === id);
+      return image && !image.skipped;
+    });
     if (ids.length === 0) return;
 
     this.setLoading(true, '正在撤销替换，请稍候...');
