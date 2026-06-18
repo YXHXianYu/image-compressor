@@ -8,6 +8,8 @@ const PROJECT_ROOT = path.resolve(__dirname, '../..');
 const CACHE_DIR = path.join(PROJECT_ROOT, 'cache');
 
 const QUALITY_STEP = 5;
+const THUMBNAIL_WIDTH = 200;
+const THUMBNAIL_QUALITY = 75;
 
 /**
  * Ensure cache directory exists.
@@ -77,14 +79,29 @@ async function compressImage(inputPath) {
 
   const { cacheKey, cacheFilePath } = await getCachePath(inputPath);
   const cacheMetaPath = path.join(CACHE_DIR, cacheKey, 'meta.json');
+  const thumbnailPath = path.join(CACHE_DIR, cacheKey, 'thumb.jpg');
 
   // Check cache hit
   if (await fs.pathExists(cacheFilePath)) {
     const stats = await fs.stat(cacheFilePath);
     const meta = await fs.readJson(cacheMetaPath).catch(() => ({}));
+
+    // Generate thumbnail if missing (e.g. cached before thumbnail feature existed)
+    if (!await fs.pathExists(thumbnailPath)) {
+      try {
+        await sharp(cacheFilePath)
+          .resize(THUMBNAIL_WIDTH, null, { withoutEnlargement: true })
+          .jpeg({ quality: THUMBNAIL_QUALITY, progressive: true })
+          .toFile(thumbnailPath);
+      } catch (thumbErr) {
+        console.warn(`Failed to generate thumbnail for ${inputPath}:`, thumbErr.message);
+      }
+    }
+
     return {
       success: true,
       cachePath: cacheFilePath,
+      thumbnailPath: (await fs.pathExists(thumbnailPath)) ? thumbnailPath : null,
       compressedSize: stats.size,
       quality: meta.quality || 0,
       error: null
@@ -123,6 +140,16 @@ async function compressImage(inputPath) {
       throw new Error(`Unknown strategy: ${config.strategy}`);
     }
 
+    // Generate thumbnail for the list view
+    try {
+      await sharp(cacheFilePath)
+        .resize(THUMBNAIL_WIDTH, null, { withoutEnlargement: true })
+        .jpeg({ quality: THUMBNAIL_QUALITY, progressive: true })
+        .toFile(thumbnailPath);
+    } catch (thumbErr) {
+      console.warn(`Failed to generate thumbnail for ${inputPath}:`, thumbErr.message);
+    }
+
     // Save metadata
     await fs.writeJson(cacheMetaPath, {
       originalPath: inputPath,
@@ -136,6 +163,7 @@ async function compressImage(inputPath) {
     return {
       success: true,
       cachePath: cacheFilePath,
+      thumbnailPath: (await fs.pathExists(thumbnailPath)) ? thumbnailPath : null,
       compressedSize,
       quality,
       error: null

@@ -67,4 +67,31 @@ router.get('/:id/compressed', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/preview/:id/thumbnail
+ * Serve a small thumbnail for the list view.
+ */
+router.get('/:id/thumbnail', async (req, res) => {
+  try {
+    const image = cacheManager.getImage(req.params.id);
+    if (!image) {
+      return res.status(404).json({ success: false, error: 'Image not found' });
+    }
+
+    if (image.thumbnailPath && await fs.pathExists(image.thumbnailPath)) {
+      return serveImage(res, image.thumbnailPath);
+    }
+
+    // Fallback to compressed image if thumbnail not available
+    if (image.cachePath) {
+      return serveImage(res, image.cachePath);
+    }
+
+    return res.status(404).json({ success: false, error: 'Thumbnail not available' });
+  } catch (err) {
+    console.error('Preview thumbnail error:', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;

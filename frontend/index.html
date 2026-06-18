@@ -21,9 +21,19 @@
       <aside class="sidebar">
         <div class="sidebar-header">
           <h2>图片列表</h2>
-          <label class="select-all">
-            <input type="checkbox" id="selectAll"> 全选
-          </label>
+          <div class="sidebar-controls">
+            <select id="sortSelect" class="sort-select" title="排序方式">
+              <option value="size-desc">原大小 ↓</option>
+              <option value="size-asc">原大小 ↑</option>
+              <option value="savings-desc">压缩比 ↓</option>
+              <option value="savings-asc">压缩比 ↑</option>
+              <option value="name-asc">文件名 A-Z</option>
+              <option value="name-desc">文件名 Z-A</option>
+            </select>
+            <label class="select-all">
+              <input type="checkbox" id="selectAll"> 全选
+            </label>
+          </div>
         </div>
         <div id="imageList" class="image-list">
           <div class="empty-state">点击“扫描并压缩”开始</div>

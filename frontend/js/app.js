@@ -3,6 +3,8 @@ const App = {
   selectedIds: new Set(),
   activeId: null,
   comparator: null,
+  sortMode: 'size-desc',
+  listItemElements: new Map(),
 
   init() {
     this.comparator = new ImageComparator();
@@ -17,6 +19,11 @@ const App = {
     document.getElementById('revertBtn').addEventListener('click', () => this.revertSelected());
     document.getElementById('settingsBtn').addEventListener('click', () => {
       this.showToast('设置功能暂未实现，请修改 config.json 文件');
+    });
+    document.getElementById('sortSelect').addEventListener('change', (e) => {
+      this.sortMode = e.target.value;
+      this.sortImages();
+      this.renderList(true);
     });
   },
 
@@ -46,8 +53,10 @@ const App = {
         this.images = res.data || [];
         this.selectedIds.clear();
         this.activeId = null;
-        this.renderList();
+        this.sortImages();
+        this.renderList(true);
         this.updateButtons();
+        this.updateSelectAllState();
         this.showToast(`扫描完成，共 ${this.images.length} 张图片`);
       } else {
         this.showToast(`扫描失败: ${res.error}`, 'error');
@@ -60,58 +69,143 @@ const App = {
     }
   },
 
-  renderList() {
+  sortImages() {
+    const [field, order] = this.sortMode.split('-');
+
+    const getters = {
+      size: (img) => img.originalSize,
+      savings: (img) => img.savingRatio,
+      name: (img) => img.name.toLowerCase()
+    };
+
+    const get = getters[field] || getters.size;
+    const multiplier = order === 'asc' ? 1 : -1;
+
+    this.images.sort((a, b) => {
+      const va = get(a);
+      const vb = get(b);
+      if (va < vb) return -1 * multiplier;
+      if (va > vb) return 1 * multiplier;
+      return 0;
+    });
+  },
+
+  renderList(fullRebuild = false) {
     const listEl = document.getElementById('imageList');
     if (this.images.length === 0) {
       listEl.innerHTML = '<div class="empty-state">暂无图片，点击“扫描并压缩”开始</div>';
+      this.listItemElements.clear();
       return;
     }
 
-    listEl.innerHTML = '';
-    for (const image of this.images) {
-      const item = document.createElement('div');
-      item.className = `image-item ${image.id === this.activeId ? 'active' : ''} ${image.error ? 'error' : ''}`;
-      item.dataset.id = image.id;
+    if (fullRebuild) {
+      // Keep existing elements when possible to avoid image re-decoding
+      const fragment = document.createDocumentFragment();
+      const newElements = new Map();
 
-      const thumbUrl = API.getCompressedUrl(image.id);
-      const checked = this.selectedIds.has(image.id) ? 'checked' : '';
-      const savings = image.savingRatio > 0 ? `节省 ${(image.savingRatio * 100).toFixed(1)}%` : '';
-      const compressedText = image.compressedSize
-        ? `${this.formatSize(image.compressedSize)}`
-        : (image.error ? '压缩失败' : '未压缩');
-
-      item.innerHTML = `
-        <input type="checkbox" ${checked}>
-        <img class="image-thumb" src="${thumbUrl}" alt="" loading="lazy" onerror="this.style.display='none'">
-        <div class="image-meta">
-          <div class="image-name" title="${image.name}">${image.name}</div>
-          <div class="image-sizes">${this.formatSize(image.originalSize)} → ${compressedText}</div>
-          <div class="image-savings">${savings}</div>
-        </div>
-      `;
-
-      item.addEventListener('click', (e) => {
-        if (e.target.tagName === 'INPUT') {
-          e.stopPropagation();
-          this.toggleSelection(image.id);
+      for (const image of this.images) {
+        let item = this.listItemElements.get(image.id);
+        if (!item) {
+          item = this.createListItem(image);
         } else {
-          this.activateImage(image.id);
+          this.updateListItemContent(item, image);
         }
-      });
+        this.updateListItemState(item, image);
+        newElements.set(image.id, item);
+        fragment.appendChild(item);
+      }
 
-      listEl.appendChild(item);
+      listEl.innerHTML = '';
+      listEl.appendChild(fragment);
+      this.listItemElements = newElements;
+    } else {
+      // Only update selection/active states
+      for (const image of this.images) {
+        const item = this.listItemElements.get(image.id);
+        if (item) {
+          this.updateListItemState(item, image);
+        }
+      }
     }
 
-    document.getElementById('selectAll').checked = this.selectedIds.size === this.images.length && this.images.length > 0;
+    this.updateSelectAllState();
+  },
+
+  createListItem(image) {
+    const item = document.createElement('div');
+    item.className = 'image-item';
+    item.dataset.id = image.id;
+
+    item.innerHTML = `
+      <input type="checkbox">
+      <img class="image-thumb" alt="" loading="lazy" onerror="this.style.display='none'">
+      <div class="image-meta">
+        <div class="image-name"></div>
+        <div class="image-sizes"></div>
+        <div class="image-savings"></div>
+      </div>
+    `;
+
+    item.addEventListener('click', (e) => {
+      if (e.target.tagName === 'INPUT') {
+        e.stopPropagation();
+        this.toggleSelection(image.id);
+      } else {
+        this.activateImage(image.id);
+      }
+    });
+
+    return item;
+  },
+
+  updateListItemContent(item, image) {
+    const thumb = item.querySelector('.image-thumb');
+    const nameEl = item.querySelector('.image-name');
+    const sizesEl = item.querySelector('.image-sizes');
+    const savingsEl = item.querySelector('.image-savings');
+
+    thumb.src = API.getThumbnailUrl(image.id);
+    thumb.style.display = '';
+    nameEl.textContent = image.name;
+    nameEl.title = image.name;
+
+    const compressedText = image.compressedSize
+      ? `${this.formatSize(image.compressedSize)}`
+      : (image.error ? '压缩失败' : '未压缩');
+    sizesEl.textContent = `${this.formatSize(image.originalSize)} → ${compressedText}`;
+
+    const savings = image.savingRatio > 0 ? `节省 ${(image.savingRatio * 100).toFixed(1)}%` : '';
+    savingsEl.textContent = savings;
+  },
+
+  updateListItemState(item, image) {
+    item.classList.toggle('active', image.id === this.activeId);
+    item.classList.toggle('error', !!image.error);
+    const checkbox = item.querySelector('input[type="checkbox"]');
+    checkbox.checked = this.selectedIds.has(image.id);
+  },
+
+  updateSelectAllState() {
+    const selectAll = document.getElementById('selectAll');
+    const selectable = this.images.filter(img => img.compressed && !img.error);
+    selectAll.checked = selectable.length > 0 && selectable.every(img => this.selectedIds.has(img.id));
   },
 
   activateImage(id) {
+    const oldActiveId = this.activeId;
     this.activeId = id;
     const image = this.images.find(img => img.id === id);
     if (image) {
       this.comparator.loadImages(image);
     }
-    this.renderList();
+
+    // Update only affected items instead of full re-render
+    if (oldActiveId) {
+      const oldItem = this.listItemElements.get(oldActiveId);
+      if (oldItem) oldItem.classList.remove('active');
+    }
+    const newItem = this.listItemElements.get(id);
+    if (newItem) newItem.classList.add('active');
   },
 
   toggleSelection(id) {
@@ -121,7 +215,13 @@ const App = {
       this.selectedIds.add(id);
     }
     this.updateButtons();
-    this.renderList();
+
+    const item = this.listItemElements.get(id);
+    if (item) {
+      const checkbox = item.querySelector('input[type="checkbox"]');
+      checkbox.checked = this.selectedIds.has(id);
+    }
+    this.updateSelectAllState();
   },
 
   toggleSelectAll(checked) {
@@ -135,7 +235,12 @@ const App = {
       this.selectedIds.clear();
     }
     this.updateButtons();
-    this.renderList();
+
+    for (const item of this.listItemElements.values()) {
+      const checkbox = item.querySelector('input[type="checkbox"]');
+      checkbox.checked = this.selectedIds.has(item.dataset.id);
+    }
+    this.updateSelectAllState();
   },
 
   updateButtons() {

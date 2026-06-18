@@ -39,5 +39,9 @@ const API = {
 
   getCompressedUrl(id) {
     return `/api/preview/${id}/compressed`;
+  },
+
+  getThumbnailUrl(id) {
+    return `/api/preview/${id}/thumbnail`;
   }
 };

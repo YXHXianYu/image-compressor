@@ -50,6 +50,7 @@ class CacheManager {
     image.compressed = result.success;
     image.compressedSize = result.compressedSize;
     image.cachePath = result.cachePath;
+    image.thumbnailPath = result.thumbnailPath;
     image.quality = result.quality;
     image.error = result.error;
 
