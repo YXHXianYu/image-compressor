@@ -57,6 +57,9 @@ const App = {
         this.renderList(true);
         this.updateButtons();
         this.updateSelectAllState();
+        if (this.images.length > 0) {
+          this.activateImage(this.images[0].id);
+        }
         this.showToast(`扫描完成，共 ${this.images.length} 张图片`);
       } else {
         this.showToast(`扫描失败: ${res.error}`, 'error');
